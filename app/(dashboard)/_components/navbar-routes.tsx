@@ -8,7 +8,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
 
-export const NavbarRoutes = () => {
+// NavbarRoutes component with customizable button colors
+export const NavbarRoutes = ({
+  buttonTextColor = "text-neutral-800", // Default text color
+  buttonBorderColor = "border-neutral-500", // Default border color
+  buttonHoverColor = "hover:bg-neutral-200", // Default hover color
+}) => {
   const pathname = usePathname();
   const isAdminPage = pathname?.startsWith("/admin");
   const isPlayerPage = pathname?.startsWith("/jobs");
@@ -16,13 +21,9 @@ export const NavbarRoutes = () => {
 
   return (
     <div className="flex w-full items-center justify-between px-2 md:px-4 py-1">
-      {" "}
-      {/* Adjusted padding */}
       {/* Search Container: Shown on medium screens and larger */}
       {isSearchPage && (
         <div className="flex-1 hidden md:flex items-center gap-x-4">
-          {" "}
-          {/* Flexbox with full width for search */}
           <SearchContainer />
         </div>
       )}
@@ -34,7 +35,7 @@ export const NavbarRoutes = () => {
             <Button
               variant="outline"
               size="sm"
-              className="border-neutral-500 text-xs md:text-sm hover:bg-neutral-200 hover:text-neutral-600 transition-all"
+              className={`text-xs md:text-sm ${buttonBorderColor} ${buttonTextColor} ${buttonHoverColor} transition-all`}
             >
               <LogOut className="mr-1 h-4 w-4" />
               Exit
@@ -45,7 +46,7 @@ export const NavbarRoutes = () => {
             <Button
               variant="outline"
               size="sm"
-              className="border-neutral-500 text-xs md:text-sm hover:bg-neutral-200 hover:text-neutral-600 transition-all"
+              className={`text-xs md:text-sm ${buttonBorderColor} ${buttonTextColor} ${buttonHoverColor} transition-all`}
             >
               Admin Mode
             </Button>
