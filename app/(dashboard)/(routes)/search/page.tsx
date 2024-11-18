@@ -30,7 +30,7 @@ const SearchPage = async ({ searchParams }: SearchProps) => {
   // Await authentication to get user ID
   const { userId } = await auth();
 
-  // Avoid using Promise.resolve() – searchParams are accessed directly
+  // Ensure searchParams is awaited before usage
   const {
     title = "",
     categoryId = "",
@@ -38,7 +38,7 @@ const SearchPage = async ({ searchParams }: SearchProps) => {
     shiftTiming = "",
     yearsOfExperience = "",
     workMode = "",
-  } = searchParams;
+  } = await searchParams;
 
   // Construct resolvedSearchParams directly without async operations
   const resolvedSearchParams = {

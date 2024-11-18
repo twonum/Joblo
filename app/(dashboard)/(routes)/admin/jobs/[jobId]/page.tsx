@@ -52,7 +52,8 @@ async function fetchData(jobId: string, userId: string) {
 }
 
 const JobDetailsPage = async ({ params }: { params: { jobId: string } }) => {
-  const jobId = params.jobId;
+  params = await params;
+  const jobId = params.jobId; // Removed await here
   const validJobID = /^[0-9a-fA-F]{24}$/;
   if (!validJobID.test(jobId)) {
     return redirect("/admin/jobs");

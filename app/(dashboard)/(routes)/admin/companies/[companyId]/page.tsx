@@ -19,7 +19,8 @@ const CompanyEditPage = async ({
   params: { companyId: string };
 }) => {
   const validcompanyID = /^[0-9a-fA-F]{24}$/;
-  const { companyId } = await params; // Ensure `params` is awaited
+  params = await params;
+  const { companyId } = params; // Ensure `params` is awaited
 
   if (!validcompanyID.test(companyId)) {
     return redirect("/admin/companies");

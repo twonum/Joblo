@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image"; // Importing Image component from Next.js
-import React from "react";
+import Image from "next/image";
 import { ImagePlus, Trash } from "lucide-react";
 import {
   deleteObject,
@@ -38,85 +37,85 @@ export const ImageUpload = ({
   if (!isMounted) {
     return null;
   }
-  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    const file: File = e.target.files[0];
+    const file = e.target.files[0];
 
     setIsLoading(true);
 
-    const uploadTask = uploadBytesResumable(
-      ref(storage, `JobCoverImage/${Date.now()}-${file?.name}`),
-      file,
-      { contentType: file?.type }
-    );
+    const fileRef = ref(storage, `JobCoverImage/${Date.now()}-${file.name}`);
+    const uploadTask = uploadBytesResumable(fileRef, file, {
+      contentType: file.type,
+    });
+
     uploadTask.on(
       "state_changed",
       (snapshot) => {
-        setProgress((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        const progressValue =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setProgress(progressValue);
       },
       (error) => {
-        toast.error(error.message);
+        toast.error("Upload failed: " + error.message);
+        setIsLoading(false);
       },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadUrl) => {
+      async () => {
+        try {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
           onChange(downloadUrl);
+          toast.success("Image uploaded successfully");
+        } catch {
+          toast.error("Error retrieving image URL");
+        } finally {
           setIsLoading(false);
-          toast.success("Image uploaded");
-        });
+        }
       }
     );
-    // You can add listeners or logic to track the upload progress, handle errors, etc.
   };
-  const onDelete = () => {
-    onRemove(value);
-    deleteObject(ref(storage, value)).then(() => {
-      toast.success("Image Deleted");
-    });
+
+  const onDelete = async () => {
+    try {
+      await deleteObject(ref(storage, value));
+      onRemove(value);
+      toast.success("Image deleted successfully");
+    } catch {
+      toast.error("Failed to delete image");
+    }
   };
+
   return (
     <div>
       {value ? (
-        <div className="relative w-full h-60 aspect-video rounded-md flex items-center justify-center overflow-hidden">
-          <Image
-            fill
-            className="w-full h-full object-cover"
-            alt="Image Cover"
-            src={value}
-          />
+        <div className="relative w-full h-60 aspect-video rounded-md overflow-hidden flex items-center justify-center">
+          <Image fill className="object-cover" alt="Image Cover" src={value} />
           <div
-            className="absolute z-10 top-2 right-2 cursor-pointer"
+            className="absolute top-2 right-2 z-10 cursor-pointer"
             onClick={onDelete}
           >
-            <Button size="icon" variant="destructive">
+            <Button size="icon" variant="destructive" disabled={disabled}>
               <Trash className="w-4 h-4" />
             </Button>
           </div>
         </div>
       ) : (
-        <>
-          <div className="relative w-full h-60 aspect-video rounded-md flex items-center justify-center overflow-hidden border bg-neutral-50 border-dashed">
-            {isLoading ? (
-              <>
-                <p>{`${progress.toFixed(2)}%`}</p>
-              </>
-            ) : (
-              <>
-                <label>
-                  <div className="w-full h-full flex flex-col gap-2 items-center justify-center cursor-pointer text-neutral-500">
-                    <ImagePlus className="w-10 h-10" />
-                    <p>Upload an Image</p>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="w-0 h-0"
-                    onChange={onUpload}
-                  />
-                </label>
-              </>
-            )}
-          </div>
-        </>
+        <div className="relative w-full h-60 aspect-video rounded-md flex items-center justify-center border border-dashed bg-neutral-50">
+          {isLoading ? (
+            <p>{`${progress.toFixed(2)}%`}</p>
+          ) : (
+            <label className="w-full h-full flex flex-col gap-2 items-center justify-center cursor-pointer text-neutral-500">
+              <ImagePlus className="w-10 h-10" />
+              <p>Upload an Image</p>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={onUpload}
+                disabled={disabled}
+              />
+            </label>
+          )}
+        </div>
       )}
     </div>
   );

@@ -66,7 +66,7 @@ export const JobCardItem = ({ job, userId }: JobCardItemProps) => {
   }, [userId, job.savedUsers]);
 
   const onClickSaveJob = async () => {
-    if (isBookmarkLoading) return; // Prevent multiple clicks while loading
+    if (isBookmarkLoading) return;
 
     try {
       setIsBookmarkLoading(true);
@@ -75,17 +75,15 @@ export const JobCardItem = ({ job, userId }: JobCardItemProps) => {
         apiUrl = `/api/jobs/${job.id}/removeJobfromCollection`;
       }
 
+      console.log("Job ID:", job.id); // Debugging line
+      console.log("API URL:", apiUrl); // Debugging line
       await axios.patch(apiUrl);
 
-      // Update the state based on API response
-      setIsSavedByUser(!isSavedByUser); // Toggle the saved status based on current state
+      setIsSavedByUser(!isSavedByUser);
 
-      // Notify the user
       toast.success(
         isSavedByUser ? "Job removed from saved jobs" : "Job saved successfully"
       );
-
-      // Refresh the page or re-fetch the data if needed
       router.refresh();
     } catch {
       toast.error("Error saving job");
@@ -93,6 +91,7 @@ export const JobCardItem = ({ job, userId }: JobCardItemProps) => {
       setIsBookmarkLoading(false);
     }
   };
+
   const getYearsOfExperienceLabel = (years: string) => {
     const experience = experienceData.find((exp) => exp.value === years);
     return experience?.label || "N/A";

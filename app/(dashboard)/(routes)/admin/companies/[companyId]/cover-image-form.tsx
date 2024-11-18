@@ -9,7 +9,6 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { Pencil, ImageIcon, Trash } from "lucide-react";
@@ -21,23 +20,21 @@ import { Company } from "@prisma/client";
 import Image from "next/image";
 import { ImageUpload } from "@/components/image-upload";
 
-// Define props interface for CompanyCoverImageForm
 interface CompanyCoverImageFormProps {
   initialData: Company;
   companyId: string;
 }
 
-// Define the schema for form validation using Zod
 const formSchema = z.object({
   coverImage: z.string().min(1, "Image URL is required"),
 });
 
-// Main CompanyCoverImageForm component
 export const CompanyCoverImageForm = ({
   initialData,
   companyId,
 }: CompanyCoverImageFormProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
   const router = useRouter();
 
   const CompanyCoverImageForm = useForm<z.infer<typeof formSchema>>({
@@ -49,49 +46,74 @@ export const CompanyCoverImageForm = ({
 
   const { isSubmitting, isValid } = CompanyCoverImageForm.formState;
 
-  // Handle form submission
   const handleFormSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       await axios.patch(`/api/companies/${companyId}`, values);
-      toast.success("Image Updated");
+      toast.success("Image Updated Successfully");
       handleToggleEditing();
       router.refresh();
-    } catch (error) {
-      toast.error("Something went wrong");
+    } catch {
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
-  // Toggle editing mode
+  const handleImageDelete = async () => {
+    try {
+      await axios.patch(`/api/companies/${companyId}/deleteCoverImage`);
+      toast.success("Cover Image Deleted Successfully");
+      router.refresh();
+    } catch {
+      toast.error("Failed to delete cover image.");
+    }
+  };
+
   const handleToggleEditing = () => setIsEditMode((current) => !current);
 
+  const handleFileChange = (file: File | null) => {
+    if (!file) return;
+
+    const validImageTypes = ["image/jpeg", "image/png", "image/jpg"];
+    if (!validImageTypes.includes(file.type)) {
+      setFileError("Only JPG, JPEG, and PNG images are allowed.");
+    } else {
+      setFileError(null);
+    }
+  };
+
   return (
-    <div className="mt-6 bg-neutral-100 rounded-md p-4">
-      <div className="font-medium flex items-center justify-between">
+    <div className="mt-6 bg-neutral-50 rounded-md p-6 shadow-lg">
+      <div className="font-semibold text-xl text-neutral-800 flex items-center justify-between mb-4">
         Cover Image
-        <Button onClick={handleToggleEditing} variant={"ghost"}>
-          {isEditMode ? (
-            <>Cancel</>
-          ) : (
-            <>
-              <Pencil className="w-4 h-4 mr-2" />
-              Edit
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-x-2">
+          <Button
+            onClick={handleToggleEditing}
+            variant={"ghost"}
+            className="text-neutral-600 hover:text-neutral-800"
+          >
+            {isEditMode ? (
+              <>Cancel</>
+            ) : (
+              <>
+                <Pencil className="w-4 h-4 mr-2" />
+                Edit
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Display image if not editing */}
       {!isEditMode &&
         (!initialData.coverImage ? (
           <div className="flex items-center justify-center h-60 bg-neutral-200 rounded-md">
-            <ImageIcon className="h-10 w-10 text-neutral-500" />
+            <ImageIcon className="h-12 w-12 text-neutral-500" />
           </div>
         ) : (
-          <div className="relative w-full h-60 aspect-video mt-2">
+          <div className="relative w-full h-60 aspect-video mt-2 rounded-md overflow-hidden shadow-md">
             <Image
-              alt="coverImage"
+              alt="Cover Image"
               fill
-              className="w-full h-full object-cover rounded-md"
+              className="w-full h-full object-cover"
               src={initialData.coverImage}
             />
           </div>
@@ -110,22 +132,44 @@ export const CompanyCoverImageForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    {/* ImageUpload component to handle image uploading */}
                     <ImageUpload
                       value={field.value}
                       disabled={isSubmitting}
-                      onChange={(url) => field.onChange(url)}
-                      onRemove={() => field.onChange("")}
+                      onChange={(url) => {
+                        field.onChange(url);
+                        handleFileChange(
+                          url ? new File([url], "image.jpg") : null
+                        );
+                      }}
+                      onRemove={() => {
+                        field.onChange("");
+                        setFileError(null);
+                      }}
                     />
                   </FormControl>
-                  <FormMessage />
+                  {fileError && <FormMessage>{fileError}</FormMessage>}
                 </FormItem>
               )}
             />
-            <div className="flex items-center gap-x-2">
-              <Button disabled={!isValid || isSubmitting} type="submit">
-                Save
+            <div className="flex items-center gap-x-4 justify-end">
+              <Button
+                disabled={!isValid || isSubmitting}
+                type="submit"
+                className="bg-green-500 text-white hover:bg-green-600"
+              >
+                {isSubmitting ? "Saving..." : "Save"}
               </Button>
+              {/* Delete button, visible only in edit mode */}
+              {initialData.coverImage && (
+                <Button
+                  onClick={handleImageDelete}
+                  variant={"ghost"}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <Trash className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              )}
             </div>
           </form>
         </Form>
